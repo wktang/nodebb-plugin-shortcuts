@@ -38,7 +38,7 @@
     ], function (debug, shortcuts, themeDefaults) {
       shortcuts.done(function (shortcuts) {
         // resolve theme module
-        var SUPPORTED_THEMES = ["lavender", "persona"];
+        var SUPPORTED_THEMES = ["lavender", "persona", "leetcode"];
         var themeID = config["theme:id"].substring("nodebb-theme-".length);
 
         if (app.inAdmin) {
