@@ -162,35 +162,43 @@ define("@{type.name}/@{id}/selection/Selection", [
   Selection.prototype.refreshAreas = function () {
     if (this.theme == null) { return []; }
     var theme = this.theme;
-    var areas = [], items = [];
-    // iterate all relevant elements
-    $(theme.itemSelectorsJoined).each(function (ignored, item) {
-      if (~items.indexOf(item)) { return; } // each item may only resolve to one area
-      var $item = $(item);
-      var area = null;
-      for (var key in theme.selection) {
-        if (theme.selection.hasOwnProperty(key)) {
-          var value = theme.selection[key];
-          if ($item.is(value.selector)) {
-            // get associated area object
-            area = typeof value.getArea === "function" ? value.getArea.call($item) : null;
-            if (area === false) { return; }
-            if (area == null) { area = new Area($item.parent()); }
-            if (area.hooks == null) { area.setHooks(value); }
-            if (area.items == null) { area.refreshItems(); }
-            break;
-          }
+    var areas = [];
+    var i, selection, items, area, _len = theme.selection.length;
+    for (i = 0; i < _len; i++) {
+      selection = theme.selection[i];
+      items = $(selection.selector);
+      if (items.length) {
+        if (selection.isParent) {
+          items.each(addAreaByParent);
+        } else {
+          area = createArea(selection, items.eq(0).parent());
+          if (area != null && (area.items.length || selection.force)) { areas.push(area); }
         }
       }
-      // track items and area
-      if (area != null) {
-        area.items.each(function (ignored, elem) { items.push(elem); });
-        areas.push(area);
-      }
-    });
+    }
     debug.log("Selection Areas refreshed", areas);
     return areas;
+
+    function addAreaByParent(ignored, item) {
+      var area = createArea(selection, $(item));
+      if (area != null && (area.items.length || selection.force)) { areas.push(area); }
+    }
   };
+
+  /**
+   * Creates a new Selection-Area with the given selector.
+   * @param selector The selector object as defined by the theme.
+   * @param parent The jQuery element to use as parent element.
+   * @returns {null|Area}
+   */
+  function createArea(selector, parent) {
+    var area = typeof selector.getArea === "function" ? selector.getArea.call(parent) : null;
+    if (area === false) { return null; }
+    if (area == null) { area = new Area(parent); }
+    if (area.hooks == null) { area.setHooks(selector); }
+    if (area.items == null) { area.refreshItems(); }
+    return area;
+  }
 
   /**
    Selects the Area at given index within this.areas.
